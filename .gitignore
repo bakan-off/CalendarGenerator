@@ -1,0 +1,14 @@
+# Виртуальная среда
+.venv/
+venv/
+
+# Скомпилированные файлы PyInstaller
+__pycache__/
+*.pyc
+build/
+dist/
+*.spec
+
+# Локальные файлы
+preview.html
+calendar_*.html
