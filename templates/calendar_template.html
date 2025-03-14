@@ -2,17 +2,19 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ header_title | default('Афиша мероприятий', true) }} {{ month_name | default('Месяц', true) }} {{ year | default('Год', true) }}</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
             max-width: 800px;
             margin: 20px auto;
             padding: 20px;
-            background: #f4f7fc;
+            background: {{ bg_color | default('#f4f7fc', true) }};
         }
         .header {
             text-align: center;
-            color: #2c3e50;
+            color: {{ header_color | default('#2c3e50', true) }};
             margin-bottom: 30px;
             padding: 20px;
             background: #dbeafe;
@@ -20,7 +22,7 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
         #calendar {
-            background: #ffffff;
+            background: {{ calendar_bg | default('#ffffff', true) }};
             padding: 30px;
             border-radius: 20px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
@@ -34,10 +36,10 @@
         .calendar-weekday {
             text-align: center;
             padding: 10px;
-            color: #ffffff;
+            color: {{ weekday_fg | default('#ffffff', true) }};
             font-size: 0.9em;
             font-weight: bold;
-            background: linear-gradient(145deg, #64b5f6, #42a5f5);
+            background: {{ weekday_bg | default('#64b5f6', true) }};
             border-radius: 8px;
         }
         .calendar-day {
@@ -47,20 +49,21 @@
             border-radius: 10px;
             cursor: pointer;
             transition: all 0.3s ease;
-            color: #37474f;
+            color: {{ fg_color | default('#37474f', true) }};
             font-weight: 500;
         }
-        .calendar-day:hover {
+        .calendar-day:hover, .calendar-day:focus {
             background: #cde7ff;
             transform: translateY(-2px);
+            outline: none;
         }
         .calendar-day.active {
-            background: linear-gradient(145deg, #1976d2, #2196f3);
+            background: {{ active_day_bg | default('#e0f7fa', true) }};
             color: white;
             box-shadow: 0 4px 6px rgba(33, 150, 243, 0.3);
         }
         .calendar-day.inactive {
-            background: #f0f0f0;
+            background: {{ inactive_day_bg | default('#f0f0f0', true) }};
             cursor: not-allowed;
             color: #9e9e9e;
         }
@@ -72,7 +75,7 @@
             padding: 20px;
             background: linear-gradient(145deg, #ffffff, #f9fbe7);
             border-radius: 12px;
-            border-left: 4px solid #ffb74d;
+            border-left: 4px solid {{ event_border | default('#ffb74d', true) }};
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
         .event-item.visible {
@@ -83,6 +86,16 @@
             background: #fffde7;
             border-left: 4px solid #1e88e5;
             box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+        }
+        .event-item h3 {
+            color: {{ event_fg | default('#000000', true) }};
+            margin: 0 0 8px 0;
+            font-size: 1.2em;
+        }
+        .event-item p {
+            color: {{ event_fg | default('#000000', true) }};
+            margin: 0;
+            line-height: 1.6;
         }
         .event-library {
             color: #607d8b;
@@ -100,20 +113,21 @@
             bottom: 30px;
             right: 30px;
             padding: 12px 25px;
-            background: #1e88e5;
-            color: white;
+            background: {{ button_bg | default('#1e88e5', true) }};
+            color: {{ button_fg | default('#ffffff', true) }};
             border: none;
             border-radius: 30px;
             cursor: pointer;
             box-shadow: 0 5px 15px rgba(33, 150, 243, 0.3);
             transition: all 0.3s ease;
         }
-        #back-to-top:hover {
+        #back-to-top:hover, #back-to-top:focus {
             background: #1565c0;
             transform: translateY(-2px);
+            outline: none;
         }
         h1 {
-            color: #2c3e50;
+            color: {{ header_color | default('#2c3e50', true) }};
             font-size: 2.5em;
             margin-bottom: 10px;
         }
@@ -124,12 +138,12 @@
             font-size: 1.8em;
         }
         h3 {
-            color: #2c3e50;
+            color: {{ fg_color | default('#37474f', true) }};
             margin: 0 0 8px 0;
             font-size: 1.2em;
         }
         p {
-            color: #37474f;
+            color: {{ fg_color | default('#37474f', true) }};
             margin: 0;
             line-height: 1.6;
         }
@@ -142,98 +156,123 @@
             border: 1px solid #ddd;
             width: 100%;
             max-width: 400px;
+            font-family: 'Arial', sans-serif;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>{{ header_title }}</h1>
-        <h2>{{ month_name }} {{ year }}</h2>
+    <div class="header" role="banner">
+        <h1>{{ header_title | default('Афиша мероприятий', true) | e }}</h1>
+        <h2>{{ month_name | default('Месяц', true) | e }} {{ year | default('Год', true) | e }}</h2>
     </div>
 
-    <div class="filters">
-        <label for="library-filter">{{ filter_text }}</label>
-        <select id="library-filter">
+    <div class="filters" role="region" aria-label="Фильтр мероприятий">
+        <label for="library-filter">{{ filter_text | default('Фильтр по библиотекам:', true) | e }}</label>
+        <select id="library-filter" aria-label="Выбор библиотеки">
             <option value="all">Все библиотеки</option>
-            {% for library in libraries %}
-            <option value="{{ library }}">{{ library }}</option>
+            {% for library in libraries if library %}
+                <option value="{{ library | e }}">{{ library | e }}</option>
             {% endfor %}
         </select>
     </div>
 
-    <div id="calendar">
-        <div class="calendar-grid">
-            <div class="calendar-weekday">Пн</div>
-            <div class="calendar-weekday">Вт</div>
-            <div class="calendar-weekday">Ср</div>
-            <div class="calendar-weekday">Чт</div>
-            <div class="calendar-weekday">Пт</div>
-            <div class="calendar-weekday">Сб</div>
-            <div class="calendar-weekday">Вс</div>
+    <div id="calendar" role="main">
+        <div class="calendar-grid" role="grid" aria-label="Календарь мероприятий">
+            <div class="calendar-weekday" role="columnheader">Пн</div>
+            <div class="calendar-weekday" role="columnheader">Вт</div>
+            <div class="calendar-weekday" role="columnheader">Ср</div>
+            <div class="calendar-weekday" role="columnheader">Чт</div>
+            <div class="calendar-weekday" role="columnheader">Пт</div>
+            <div class="calendar-weekday" role="columnheader">Сб</div>
+            <div class="calendar-weekday" role="columnheader">Вс</div>
 
-            {% for _ in range(start_day) %}
-            <div class="calendar-day inactive"></div>
+            {% for _ in range(start_day | default(0, true)) %}
+                <div class="calendar-day inactive" role="gridcell" aria-disabled="true"></div>
             {% endfor %}
 
-            {% for day in range(1, days_in_month + 1) %}
-            <div class="calendar-day" data-date="{{ day }}">{{ day }}</div>
+            {% for day in range(1, (days_in_month | default(31, true)) + 1) %}
+                <div class="calendar-day" data-date="{{ day }}" tabindex="0" role="gridcell" aria-label="День {{ day }}">
+                    {{ day }}
+                </div>
             {% endfor %}
         </div>
 
-        <div id="events">
-            {% for event in events %}
-            <div class="event-item" id="date-{{ event.date }}-{{ loop.index }}" data-event-date="{{ '%02d' | format(event.date) }}">
-                <h3>{{ event.date }} {{ month_name }} {{ year }} • {{ event.time }}</h3>
-                <p>{{ event.title }}</p>
-                {% if event.info %}
-                <p>{{ event.info }}</p>
-                {% endif %}
-                <div class="event-library">{{ event.place }}</div>
-            </div>
-            {% endfor %}
+        <div id="events" role="region" aria-label="Список мероприятий">
+            {% if events and events|length > 0 %}
+                {% for event in events if event.date is defined and event.title is defined %}
+                    <div class="event-item" id="date-{{ event.date }}-{{ loop.index }}"
+                         data-event-date="{{ '%02d' | format(event.date | default(1, true)) }}"
+                         role="article" aria-label="Мероприятие на {{ event.date }} {{ month_name }}">
+                        <h3>
+                            {{ event.date | default('1', true) | e }}
+                            {{ month_name | default('Месяц', true) | e }}
+                            {{ year | default('Год', true) | e }}
+                            {% if event.time and event.time|trim %} • {{ event.time | e }}{% endif %}
+                        </h3>
+                        <p>{{ event.title | default('Без названия', true) | e }}</p>
+                        {% if event.info and event.info|trim %}
+                            <p>{{ event.info | e }}</p>
+                        {% endif %}
+                        <div class="event-library">{{ event.place | default('Не указано', true) | e }}</div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>Нет мероприятий для отображения.</p>
+            {% endif %}
         </div>
     </div>
 
-    <button id="back-to-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+    <button id="back-to-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" aria-label="Вернуться к началу">
         ↑ Вернуться к календарю
     </button>
 
     <script>
         document.querySelectorAll('.calendar-day[data-date]').forEach(day => {
-            day.addEventListener('click', () => {
-                document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('active'));
-                document.querySelectorAll('.event-item').forEach(e => e.classList.remove('active-event'));
-                day.classList.add('active');
-                const date = day.getAttribute('data-date');
-                const events = document.querySelectorAll(`.event-item[data-event-date="${date.padStart(2, '0')}"]`);
-                document.querySelectorAll('.event-item').forEach(event => {
-                    event.style.display = 'none';
-                });
-                if (events.length > 0) {
-                    events.forEach(event => {
-                        event.style.display = 'block';
-                        event.classList.add('active-event');
-                    });
-                    events[0].scrollIntoView({behavior: 'smooth', block: 'start'});
+            day.addEventListener('click', activateDay);
+            day.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    activateDay.call(day);
                 }
             });
         });
 
-        document.getElementById('library-filter').addEventListener('change', function() {
-            const selectedLibrary = this.value;
+        function activateDay() {
             document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('active'));
+            document.querySelectorAll('.event-item').forEach(e => e.classList.remove('active-event'));
+            this.classList.add('active');
+            const date = this.getAttribute('data-date');
+            const events = document.querySelectorAll(`.event-item[data-event-date="${date.padStart(2, '0')}"]`);
             document.querySelectorAll('.event-item').forEach(event => {
-                const libraryElement = event.querySelector('.event-library');
-                if (!libraryElement) return;
-                const library = libraryElement.textContent.trim();
-                const date = event.getAttribute('data-event-date');
-                const calendarDay = document.querySelector(`.calendar-day[data-date="${parseInt(date)}"]`);
-                event.style.display = (selectedLibrary === 'all' || library === selectedLibrary) ? 'block' : 'none';
-                if (selectedLibrary !== 'all' && library === selectedLibrary) {
-                    calendarDay?.classList.add('active');
-                }
+                event.style.display = 'none';
             });
-        });
+            if (events.length > 0) {
+                events.forEach(event => {
+                    event.style.display = 'block';
+                    event.classList.add('active-event');
+                });
+                events[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        const libraryFilter = document.getElementById('library-filter');
+        if (libraryFilter) {
+            libraryFilter.addEventListener('change', function() {
+                const selectedLibrary = this.value;
+                document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('active'));
+                document.querySelectorAll('.event-item').forEach(event => {
+                    const libraryElement = event.querySelector('.event-library');
+                    if (!libraryElement) return;
+                    const library = libraryElement.textContent.trim();
+                    const date = event.getAttribute('data-event-date');
+                    const calendarDay = document.querySelector(`.calendar-day[data-date="${parseInt(date)}"]`);
+                    event.style.display = (selectedLibrary === 'all' || library === selectedLibrary) ? 'block' : 'none';
+                    if (selectedLibrary !== 'all' && library === selectedLibrary && calendarDay) {
+                        calendarDay.classList.add('active');
+                    }
+                });
+            });
+        }
 
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
